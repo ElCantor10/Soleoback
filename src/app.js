@@ -1,4 +1,4 @@
-// src/app.js
+// src/app.js - VERSIÓN SIMPLIFICADA
 import express from "express";
 import morgan from "morgan";
 import cors from "cors";
@@ -8,21 +8,23 @@ import { connectToDB } from "./db/connect.js";
 
 const app = express();
 
-app.use(
-  cors({
-    origin: [
-      "http://localhost:5173",
-      process.env.FRONT_ORIGIN || ""
-    ].filter(Boolean),
-    credentials: true
-  })
-);
+// CORS PERMISIVO para desarrollo/producción
+app.use(cors({
+  origin: true, // Permite cualquier origen (o usa "*" si hay problemas)
+  credentials: true
+}));
+
 app.use(express.json());
 app.use(morgan("dev"));
 
-// Conexión a Mongo cacheada por request (seguro en serverless)
+// Conexión a Mongo
 app.use(async (_req, _res, next) => {
-  try { await connectToDB(); next(); } catch (e) { next(e); }
+  try { 
+    await connectToDB(); 
+    next(); 
+  } catch (e) { 
+    next(e); 
+  }
 });
 
 app.get("/", (_req, res) => res.json({ ok: true, name: "todo-pwa-api" }));
