@@ -20,6 +20,9 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+console.log('🚀 Iniciando Soleo API...');
+console.log(`📁 Entorno: ${process.env.NODE_ENV || 'development'}`);
+console.log(`🗄️  MongoDB URI: ${process.env.MONGODB_URI ? 'Configurada' : 'No configurada'}`);
 const app = express();
 
 // ===== INICIALIZACIÓN FIREBASE =====
