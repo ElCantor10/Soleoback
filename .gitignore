@@ -1,7 +1,7 @@
-#dependecias
+# dependencias
 node_modules/
-#build / coverage / logs
 
+# build / coverage / logs
 dist/
 build/
 coverage/
@@ -10,8 +10,16 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-
 # env y credenciales
 .env
 .env.*
 !.env.example
+
+# Credenciales específicas
+src/config/serviceAccountKey.json
+
+# Otros archivos sensibles
+*.key
+*.pem
+*.json
+config/production.json
