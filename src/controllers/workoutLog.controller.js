@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import WorkoutLog from '../models/workoutLog.js';
+import WorkoutLog from '../models/WorkoutLog.js';
 import User from '../models/User.js';
 import Routine from '../models/Routine.js';
 
