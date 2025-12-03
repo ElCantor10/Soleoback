@@ -1,30 +1,27 @@
-// src/middleware/uploadProfile.js - VERSIÓN CORREGIDA
+// src/middleware/uploadProfile.js - VERSIÓN QUE FUNCIONA EN VERCEL
 import multer from "multer";
 import path from "path";
-import fs from "fs";
 
-// Diferente storage para desarrollo vs producción
+// ⚠️ EN VERCEL: NO podemos usar filesystem, usamos memoryStorage
 let storage;
 
 if (process.env.NODE_ENV === 'production') {
-  // ⚠️ EN VERCEL/PRODUCCIÓN: No podemos escribir en filesystem
-  console.log('🔄 Usando memoryStorage para Vercel');
-  storage = multer.memoryStorage(); // Almacena en memoria
+  // PRODUCCIÓN (Vercel): Almacenar en memoria
+  console.log('🔄 Configurando multer con memoryStorage para Vercel');
+  storage = multer.memoryStorage();
 } else {
-  // ✅ EN DESARROLLO: Usar disk storage normal
-  console.log('💾 Usando diskStorage para desarrollo');
-  
-  const profilesDir = "public/uploads/profile";
-  
-  // Solo crear directorios en desarrollo
-  if (!fs.existsSync(profilesDir)) {
-    fs.mkdirSync(profilesDir, { recursive: true });
-    console.log('📁 Carpeta creada:', profilesDir);
-  }
+  // DESARROLLO: Usar filesystem local
+  import("fs").then(fs => {
+    const profilesDir = "public/uploads/profile";
+    if (!fs.existsSync(profilesDir)) {
+      fs.mkdirSync(profilesDir, { recursive: true });
+      console.log('📁 Carpeta creada:', profilesDir);
+    }
+  });
   
   storage = multer.diskStorage({
     destination: (req, file, cb) => {
-      cb(null, profilesDir);
+      cb(null, "public/uploads/profile");
     },
     filename: (req, file, cb) => {
       const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
