@@ -1,8 +1,10 @@
-// src/app.js - VERSIÓN ACTUALIZADA
+// src/app.js - VERSIÓN CORREGIDA
 import express from "express";
 import morgan from "morgan";
 import cors from "cors";
-import admin from "firebase-admin"; // IMPORTANTE: Agregar esto
+import admin from "firebase-admin";
+import mongoose from "mongoose"; // ← AÑADE ESTO
+
 import taskRoutes from "./routes/task.routes.js";
 import authRoutes from "./routes/auth.routes.js";
 import membershipRoutes from "./routes/membership.routes.js";
@@ -23,12 +25,12 @@ const __dirname = path.dirname(__filename);
 console.log('🚀 Iniciando Soleo API...');
 console.log(`📁 Entorno: ${process.env.NODE_ENV || 'development'}`);
 console.log(`🗄️  MongoDB URI: ${process.env.MONGODB_URI ? 'Configurada' : 'No configurada'}`);
+
 const app = express();
 
 // ===== INICIALIZACIÓN FIREBASE =====
 try {
   if (process.env.GOOGLE_PRIVATE_KEY) {
-    // PRODUCCIÓN (Vercel)
     console.log('🔧 Inicializando Firebase para Vercel...');
     admin.initializeApp({
       credential: admin.credential.cert({
@@ -39,7 +41,6 @@ try {
     });
     console.log('✅ Firebase inicializado (Vercel)');
   } else {
-    // DESARROLLO LOCAL
     console.log('🔧 Inicializando Firebase local...');
     const serviceAccount = JSON.parse(
       await import('fs/promises').then(fs => 
@@ -53,10 +54,9 @@ try {
   }
 } catch (error) {
   console.error('❌ Error inicializando Firebase:', error.message);
-  // No detenemos la app, pero lo registramos
 }
 
-// CORS PERMISIVO para desarrollo/producción
+// CORS PERMISIVO
 app.use(cors({
   origin: true,
   credentials: true
@@ -64,45 +64,52 @@ app.use(cors({
 
 app.use(express.json());
 app.use(morgan("dev"));
+app.use(express.static('public'));
 
-app.use(express.static('public')); //archivos estaticos desde el public
-
-// Middleware para agregar Firebase a las requests
+// Middleware para agregar Firebase
 app.use((req, _res, next) => {
   req.firebaseAdmin = admin;
   next();
 });
 
-// Conexión a Mongo
-app.use(async (_req, _res, next) => {
+// ===== MIDDLEWARE DE CONEXIÓN SEGURO =====
+app.use(async (req, res, next) => {
   try { 
-    await connectToDB(); 
+    await connectToDB();
     next(); 
-  } catch (e) { 
-    next(e); 
+  } catch (error) { 
+    // NO propagues el error
+    console.log('⚠️  MongoDB no disponible:', error.message);
+    console.log('🔄 Continuando en modo limitado...');
+    req.dbError = error.message;
+    next(); // ← ¡CONTINÚA SIN ERROR!
   }
 });
 
-// Ruta de verificación de servicios
+// ===== RUTAS =====
 app.get("/health", (_req, res) => {
   res.json({
     status: "OK",
     timestamp: new Date().toISOString(),
     services: {
-      mongodb: true, // Asumiendo que connectToDB ya se ejecutó
+      mongodb: mongoose.connection.readyState === 1,
       firebase: admin.apps.length > 0,
       environment: process.env.NODE_ENV || 'development'
     }
   });
 });
 
-app.get("/", (_req, res) => res.json({ 
-  ok: true, 
-  name: "soleo-pwa-api",
-  version: "1.0.0",
-  firebase: admin.apps.length > 0 ? "connected" : "disconnected"
-}));
+app.get("/", (_req, res) => {
+  res.json({ 
+    ok: true, 
+    name: "soleo-pwa-api",
+    version: "1.0.0",
+    firebase: admin.apps.length > 0 ? "connected" : "disconnected",
+    mongodb: mongoose.connection.readyState === 1 ? "connected" : "disconnected"
+  });
+});
 
+// Rutas API
 app.use("/api/tasks", taskRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/memberships", membershipRoutes);
@@ -112,5 +119,14 @@ app.use("/api/muscle-groups", muscleGroupRoutes);
 app.use("/api/exercises", exerciseRoutes);
 app.use('/api/workout-logs', workoutLogRoutes);
 app.use("/api/payments", paymentRoutes);
+
+// ===== MANEJO DE ERRORES GLOBAL =====
+app.use((error, req, res, next) => {
+  console.error('❌ Error no manejado:', error.message);
+  res.status(500).json({
+    error: 'Error interno del servidor',
+    message: process.env.NODE_ENV === 'development' ? error.message : undefined
+  });
+});
 
 export default app;
