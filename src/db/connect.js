@@ -9,7 +9,7 @@ export async function connectToDB() {
   if (!cached.promise) {
     const { MONGO_URI } = process.env;
     if (!MONGO_URI) throw new Error("Falta MONGO_URI");
-    cached.promise = mongoose.connect(MONGO_URI, { dbName: "BackPWA" })
+    cached.promise = mongoose.connect(MONGO_URI, { dbName: "soleo" })
       .then((m) => m.connection);
   }
   cached.conn = await cached.promise;

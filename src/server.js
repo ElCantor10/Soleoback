@@ -4,9 +4,16 @@ import mongoose from 'mongoose';
 import morgan from 'morgan';
 import cors from 'cors';
 
+
 // importar rutas
 import taskRoutes from './routes/task.routes.js';
 import authRoutes from './routes/auth.routes.js';
+import membershipRoutes from "./routes/membership.routes.js";
+import userRoutes from "./routes/user.routes.js";
+import routineRoutes from "./routes/routine.routes.js";
+import muscleGroupRoutes from "./routes/muscleGroup.routes.js"; // NUEVO
+import exerciseRoutes from "./routes/exercise.routes.js"; // NUEVO
+import workoutLogRoutes from "./routes/workoutLog.routes.js"; // NUEVO
 
 // Crear la aplicación de Express
 const app = express();
@@ -14,11 +21,22 @@ app.use(cors());
 app.use(express.json());
 app.use(morgan('dev'));
 
-app.get('/', (req, res) => res.json({ok: true, name:'todo-pwa-api'}));
+app.get('/', (req, res) => res.json({ok: true, name:'soleo-pwa-api'}));
 
 // ✅ MONTA LAS RUTAS DE TASKS (FALTABA ESTA LÍNEA)
 app.use('/api/tasks', taskRoutes);
 app.use('/api/auth', authRoutes);
+app.use("/api/memberships", membershipRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/routines", routineRoutes);
+app.use("/api/muscle-groups", muscleGroupRoutes); // NUEVO
+app.use("/api/exercises", exerciseRoutes); // NUEVO
+app.use('/api/workout-logs', workoutLogRoutes);
+
+require('./jobs/sendWorkoutReminders');
+require('./jobs/sendMembershipExpiryAlerts.js');
+
+
 
 const { PORT = 4000, MONGO_URI } = process.env;
 
